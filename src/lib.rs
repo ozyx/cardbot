@@ -1,8 +1,10 @@
 #[macro_use]
 extern crate serde;
 extern crate reqwest;
-extern crate serde_derive;
+
 use reqwest::Error;
+use serde::Deserialize;
+use std::time::Duration;
 
 #[derive(Deserialize, Debug)]
 pub struct Deck {
@@ -19,6 +21,7 @@ pub struct Card {
     code: String,
 }
 
+#[derive(Deserialize, Debug)]
 pub struct DrawCard {
     deck_id: Option<String>,
     count: u16,
@@ -42,18 +45,34 @@ impl RestPath<(Option<String>, u16)> for DrawCard {
     }
 }
 
+pub trait CardApi {
+    fn base_url() -> &'static str {
+        "https://deckofcardsapi.com"
+    }
+}
+
 pub trait RestPath<U> {
     fn get_path(params: U) -> Result<String, Error>;
 }
 
-pub struct RestClient {}
+pub struct RestClient {
+    client: reqwest::blocking::Client,
+}
 
 impl RestClient {
-    pub fn get_sync<U, T>(&mut self, params: U) -> Result<T, Error>
+    pub fn new() -> Result<RestClient, Error> {
+        Ok(RestClient {
+            client: reqwest::blocking::Client::builder()
+                .timeout(Duration::from_secs(10))
+                .build()?,
+        })
+    }
+
+    pub fn get_sync<T, U>(&mut self, params: U) -> Result<T, Error>
     where
         T: serde::de::DeserializeOwned + RestPath<U>,
     {
-        let res = reqwest::blocking::get(T::get_path(params)?.as_str())?;
+        let res = self.client.get(T::get_path(params)?.as_str()).send()?;
         let json = res.json()?;
         Ok(json)
     }

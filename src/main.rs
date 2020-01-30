@@ -1,6 +1,7 @@
 use cardbot::*;
 
 fn main() {
-    // let deck_id: String = Client::new_deck().unwrap();
-    // println!("{}", deck_id);
+   let mut client = RestClient::new().unwrap();
+   let data: DrawCard = client.get_sync((Option::None, 1)).unwrap();
+   
 }
