@@ -10,7 +10,7 @@ use std::time::Duration;
 pub struct Deck {
     deck_id: String,
     remaining: i32,
-    shuffled: bool,
+    shuffled: Option<bool>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -23,23 +23,21 @@ pub struct Card {
 
 #[derive(Deserialize, Debug)]
 pub struct DrawCard {
-    deck_id: Option<String>,
-    count: u16,
+    pub deck_id: Option<String>,
+    pub count: u16,
 }
 
-impl RestPath<(Option<String>, u16)> for DrawCard {
-    fn get_path(params: (Option<String>, u16)) -> Result<String, Error> {
-        let deck_id = params.0;
-        let count = params.1;
+impl RestPath<DrawCard> for Deck {
+    fn get_path(params: DrawCard) -> Result<String, Error> {
 
-        match deck_id {
+        match params.deck_id {
             Some(id) => Ok(format!(
                 "https://deckofcardsapi.com/api/deck/{0}/draw/?count={1}",
-                id, count
+                id, params.count
             )),
             None => Ok(format!(
                 "https://deckofcardsapi.com/api/deck/new/draw/?count={0}",
-                count
+                params.count
             )),
         }
     }
@@ -68,7 +66,7 @@ impl RestClient {
         })
     }
 
-    pub fn get_sync<T, U>(&mut self, params: U) -> Result<T, Error>
+    pub fn get_sync<U, T>(&mut self, params: U) -> Result<T, Error>
     where
         T: serde::de::DeserializeOwned + RestPath<U>,
     {
