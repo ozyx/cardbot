@@ -6,11 +6,13 @@ use reqwest::Error;
 use serde::Deserialize;
 use std::time::Duration;
 
+// TODO: This probably shouldn't be entirely public
 #[derive(Deserialize, Debug)]
 pub struct Deck {
-    deck_id: String,
-    remaining: i32,
-    shuffled: Option<bool>,
+    pub success: bool,
+    pub deck_id: String,
+    pub remaining: i32,
+    pub cards: Vec<Card>
 }
 
 #[derive(Deserialize, Debug)]
@@ -74,11 +76,4 @@ impl RestClient {
         let json = res.json()?;
         Ok(json)
     }
-
-    // // TODO:
-    // pub fn post_sync(&mut self, url: String, body: String) -> Result<(), Error> {
-    //     let client = reqwest::blocking::Client::new();
-    //     let _res = client.post(&url).body(body).send()?;
-    //     Ok(())
-    // }
 }

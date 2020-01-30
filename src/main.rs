@@ -9,4 +9,9 @@ fn main() {
         })
         .unwrap();
     println!("{:?}", data);
+    let data2: Deck = client.get_sync(DrawCard {
+        deck_id: Some(data.deck_id),
+        count: 5
+    }).unwrap();
+    println!("{:?}", data2);
 }
