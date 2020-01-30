@@ -8,7 +8,7 @@ use reqwest::Error;
 pub struct Deck {
     deck_id: String,
     remaining: i32,
-    shuffled: bool
+    shuffled: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -16,80 +16,52 @@ pub struct Card {
     image: String,
     value: String,
     suit: String,
-    code: String
+    code: String,
 }
 
-pub struct RestClient {
-    base_url: String,
-    deck: Deck
+pub struct DrawCard {
+    deck_id: Option<String>,
+    count: u16,
 }
+
+impl RestPath<(Option<String>, u16)> for DrawCard {
+    fn get_path(params: (Option<String>, u16)) -> Result<String, Error> {
+        let deck_id = params.0;
+        let count = params.1;
+
+        match deck_id {
+            Some(id) => Ok(format!(
+                "https://deckofcardsapi.com/api/deck/{0}/draw/?count={1}",
+                id, count
+            )),
+            None => Ok(format!(
+                "https://deckofcardsapi.com/api/deck/new/draw/?count={0}",
+                count
+            )),
+        }
+    }
+}
+
+pub trait RestPath<U> {
+    fn get_path(params: U) -> Result<String, Error>;
+}
+
+pub struct RestClient {}
 
 impl RestClient {
-
-    pub fn new() {
-        let base_url = "https://deckofcardsapi.com/api/deck/";
-    }
-
-    pub fn get_sync<T>(&mut self, url: String) -> Result<T, Error> where T: serde::de::DeserializeOwned {
-        let res = reqwest::blocking::get(&url)?;
+    pub fn get_sync<U, T>(&mut self, params: U) -> Result<T, Error>
+    where
+        T: serde::de::DeserializeOwned + RestPath<U>,
+    {
+        let res = reqwest::blocking::get(T::get_path(params)?.as_str())?;
         let json = res.json()?;
         Ok(json)
     }
 
-    pub fn post_sync(&mut self, url: String, body: String) -> Result<(), Error> {
-        let client = reqwest::blocking::Client::new();
-        let _res = client.post(&url).body(body).send()?;
-        Ok(())
-    }
-
-    // pub fn new_deck() -> Result<String, Error> {
-    //     let res = reqwest::blocking::get("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1")?;
-    //     let deck: Deck = res.json()?;
-    
-    //     Ok(deck.deck_id)
+    // // TODO:
+    // pub fn post_sync(&mut self, url: String, body: String) -> Result<(), Error> {
+    //     let client = reqwest::blocking::Client::new();
+    //     let _res = client.post(&url).body(body).send()?;
+    //     Ok(())
     // }
 }
-
-
-
-pub struct CardGame {
-    game_type: CardGameType,
-    players: Vec<String>,
-    leader: String,
-    config: Config,
-    deck_id: String
-}
-
-impl CardGame {
-    pub fn run() {
-
-    }
-
-    fn draw() { 
-
-    }
-}
-
-enum CardGameType {
-    Blackjack,
-    Poker
-}
-
-struct Config {
-    num_decks: i16
-}
-
-impl Config {
-    pub fn new(game_type: CardGameType) -> Result<Config, &'static str> {
-        
-        let decks;
-
-        match game_type {
-            CardGameType::Blackjack => decks = 6,
-            CardGameType::Poker     => decks = 1
-        }
-
-        Ok(Config { num_decks: decks })
-    }
-}
-
