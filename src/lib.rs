@@ -11,7 +11,8 @@ pub struct Deck {
     success: bool,
     deck_id: String,
     remaining: i32,
-    cards: Vec<Card>,
+    cards: Option<Vec<Card>>,
+    shuffled: Option<bool>,
 }
 
 impl Deck {
@@ -46,18 +47,20 @@ impl Card {
 pub enum DeckOfCardsActions {
     DrawCard(Option<String>, u16),
     NewDeck,
+    PartialDeck(Vec<String>),
     ShuffleDeck(String),
 }
 
 impl RestPath<DeckOfCardsActions> for Deck {
     fn get_path(params: DeckOfCardsActions) -> Result<String, Error> {
-        use DeckOfCardsActions::{DrawCard, NewDeck, ShuffleDeck};
+        use DeckOfCardsActions::{DrawCard, NewDeck, PartialDeck, ShuffleDeck};
         match params {
             DrawCard(deck_id, count) => match deck_id {
                 Some(id) => Ok(format!("/api/deck/{0}/draw/?count={1}", id, count)),
                 None => Ok(format!("/api/deck/new/draw/?count={0}", count)),
             },
             NewDeck => Ok("/api/deck/new/".to_string()),
+            PartialDeck(codes) => Ok(format!("/api/deck/new/shuffle/?cards={0}", codes.join(","))),
             ShuffleDeck(deck_id) => Ok(format!("/api/deck/{0}/shuffle/", deck_id)),
         }
     }
