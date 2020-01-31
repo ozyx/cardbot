@@ -5,7 +5,7 @@ fn main() {
         .expect("Something went egregiously wrong?");
 
     let mut data: Deck = client
-        .get_sync(DeckOfCardsActions::DrawCard(Option::None, 1))
+        .get_sync(DeckOfCardsActions::DrawFromDeck(Option::None, 1))
         .unwrap();
 
     println!("{:#?}", data);
@@ -17,7 +17,10 @@ fn main() {
     println!("{:#?}", data);
 
     data = client
-        .get_sync(DeckOfCardsActions::DrawCard(Some(data.get_deck_id()), 5))
+        .get_sync(DeckOfCardsActions::DrawFromDeck(
+            Some(data.get_deck_id()),
+            5,
+        ))
         .unwrap();
 
     println!("{:#?}", data);

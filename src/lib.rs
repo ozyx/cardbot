@@ -1,6 +1,5 @@
-#[macro_use]
-extern crate serde;
 extern crate reqwest;
+extern crate serde;
 
 use reqwest::Error;
 use serde::Deserialize;
@@ -45,23 +44,45 @@ impl Card {
 }
 
 pub enum DeckOfCardsActions {
-    DrawCard(Option<String>, u16),
-    NewDeck,
-    PartialDeck(Vec<String>),
+    AddToPile(String, String, Vec<String>),
+    DrawFromDeck(Option<String>, u16),
+    // TODO:
+    // DrawFromPile(...),
+    CreateNewDeck,
+    CreatePartialDeck(Vec<String>),
+    ListPile(String, String),
     ShuffleDeck(String),
+    ShufflePile(String, String),
 }
 
+///
+///
 impl RestPath<DeckOfCardsActions> for Deck {
     fn get_path(params: DeckOfCardsActions) -> Result<String, Error> {
-        use DeckOfCardsActions::{DrawCard, NewDeck, PartialDeck, ShuffleDeck};
+        use DeckOfCardsActions::*;
         match params {
-            DrawCard(deck_id, count) => match deck_id {
+            AddToPile(deck_id, pile_name, codes) => Ok(format!(
+                "/api/deck/{0}/pile/{1}/add/?cards={2}",
+                deck_id,
+                pile_name,
+                codes.join(",")
+            )),
+            DrawFromDeck(deck_id, count) => match deck_id {
                 Some(id) => Ok(format!("/api/deck/{0}/draw/?count={1}", id, count)),
                 None => Ok(format!("/api/deck/new/draw/?count={0}", count)),
             },
-            NewDeck => Ok("/api/deck/new/".to_string()),
-            PartialDeck(codes) => Ok(format!("/api/deck/new/shuffle/?cards={0}", codes.join(","))),
+            CreateNewDeck => Ok("/api/deck/new/".to_string()),
+            CreatePartialDeck(codes) => {
+                Ok(format!("/api/deck/new/shuffle/?cards={0}", codes.join(",")))
+            }
+            ListPile(deck_id, pile_name) => {
+                Ok(format!("/api/deck/{0}/pile/{1}/list/", deck_id, pile_name))
+            }
             ShuffleDeck(deck_id) => Ok(format!("/api/deck/{0}/shuffle/", deck_id)),
+            ShufflePile(deck_id, pile_name) => Ok(format!(
+                "/api/deck/{0}/pile/{1}/shuffle/",
+                deck_id, pile_name
+            )),
         }
     }
 }
@@ -78,6 +99,11 @@ pub struct RestClient {
 }
 
 impl RestClient {
+    /// Create a new `RestClient`.
+    ///
+    /// ### Params
+    ///
+    /// `base_url`: The base URL for the given Rest API
     pub fn new(base_url: String) -> Result<RestClient, Error> {
         let client = RestClient {
             base_url: base_url,
@@ -89,6 +115,13 @@ impl RestClient {
         Ok(client)
     }
 
+    /// Make a sychronous GET request against a given URL.
+    ///
+    /// The calling type must implement the `RestPath` and
+    /// `serde::de::Deserialize` Traits.
+    ///
+    /// ### Params
+    /// `params`: parameter object for the given call
     pub fn get_sync<U, T>(&mut self, params: U) -> Result<T, Error>
     where
         T: serde::de::DeserializeOwned + RestPath<U>,
