@@ -1,7 +1,7 @@
 use cardbot::*;
 
 fn main() {
-    let mut client = RestClient::new("https://deckofcardsapi.com".to_string())
+    let mut client = rest_client::RestClient::new("https://deckofcardsapi.com".to_string())
         .expect("Something went egregiously wrong?");
 
     let mut data: Deck = client
