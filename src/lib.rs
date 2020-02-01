@@ -7,6 +7,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct Deck {
+    error: Option<String>,
     success: bool,
     deck_id: String,
     remaining: i32,
