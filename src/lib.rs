@@ -68,7 +68,6 @@ impl Card {
 pub enum ApiActions<'a> {
     AddToPile(String, &'a str, String),
     DrawFromDeck(Option<String>, u16),
-    // TODO:
     DrawFromPile(String, &'a str, Option<&'a str>, Option<u16>),
     CreateNewDeck,
     CreatePartialDeck(Vec<&'a str>),
