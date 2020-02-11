@@ -40,4 +40,14 @@ fn main() {
         ))
         .unwrap();
     println!("{:#?}", data);
+
+    data = client
+        .get_sync(ApiActions::DrawFromPile(
+            data.get_deck_id(),
+            "jessepile",
+            None,
+            Some(1),
+        ))
+        .expect("hmmm");
+    println!("{:#?}", data);
 }

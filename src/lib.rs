@@ -11,7 +11,7 @@ pub struct DeckResponse {
     error: Option<String>,
     success: bool,
     deck_id: String,
-    remaining: u16,
+    remaining: Option<u16>,
     cards: Option<Vec<Card>>,
     shuffled: Option<bool>,
     piles: Option<HashMap<String, Pile>>,
@@ -19,11 +19,11 @@ pub struct DeckResponse {
 
 #[derive(Deserialize, Debug)]
 pub struct Pile {
-    remaining: u16,
+    remaining: Option<u16>,
 }
 
 impl DeckResponse {
-    pub fn get_deck_id(self) -> String {
+    pub fn get_deck_id(&self) -> String {
         return self.deck_id.clone();
     }
     pub fn get_cards(&self) -> Vec<Card> {
@@ -69,7 +69,7 @@ pub enum ApiActions<'a> {
     AddToPile(String, &'a str, String),
     DrawFromDeck(Option<String>, u16),
     // TODO:
-    // DrawFromPile(...),
+    DrawFromPile(String, &'a str, Option<&'a str>, Option<u16>),
     CreateNewDeck,
     CreatePartialDeck(Vec<&'a str>),
     ListPile(String, String),
@@ -85,13 +85,24 @@ impl rest_client::RestPath<ApiActions<'_>> for DeckResponse {
         match params {
             AddToPile(deck_id, pile_name, codes) => Ok(format!(
                 "/api/deck/{0}/pile/{1}/add/?cards={2}",
-                deck_id,
-                pile_name,
-                codes
+                deck_id, pile_name, codes
             )),
             DrawFromDeck(deck_id, count) => match deck_id {
                 Some(id) => Ok(format!("/api/deck/{0}/draw/?count={1}", id, count)),
                 None => Ok(format!("/api/deck/new/draw/?count={0}", count)),
+            },
+            DrawFromPile(deck_id, pile_name, codes, count) => match codes {
+                Some(code_str) => Ok(format!(
+                    "/api/deck/{0}/pile/{1}/draw/?cards={2}",
+                    deck_id, pile_name, code_str
+                )),
+                None => match count {
+                    Some(cards_num) => Ok(format!(
+                        "/api/deck/{0}/pile/{1}/draw/?count={2}",
+                        deck_id, pile_name, cards_num
+                    )),
+                    None => panic!("need either code str or count to draw from pile"),
+                },
             },
             CreateNewDeck => Ok(format!("/api/deck/new/")),
             CreatePartialDeck(codes) => {
